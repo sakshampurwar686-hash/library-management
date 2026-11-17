@@ -1,0 +1,33 @@
+# Git version control
+.git
+.gitignore
+
+# Docker config files
+.dockerignore
+Dockerfile*
+docker-compose*.yml
+
+# Environment files
+.env
+.env.*
+
+# Documentation
+README.md
+
+# IDEs & Editor configurations
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# Operating System metadata
+.DS_Store
+Thumbs.db
+ehthumbs.db
+
+# Logs and temporary files
+*.log
+*.tmp
+*.bak
+*.swp
+*~

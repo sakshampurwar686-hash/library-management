@@ -1,0 +1,16 @@
+services:
+  library-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: library-management:latest
+    container_name: library_management_app
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    volumes:
+      - library_mysql_data:/var/lib/mysql
+
+volumes:
+  library_mysql_data:
+    driver: local
