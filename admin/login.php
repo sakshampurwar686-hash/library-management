@@ -1,6 +1,6 @@
 <?php
 // Admin login page
-require_once '../includes/db.php';
+require_once __DIR__ . '/includes/db.php';
 if (!empty($_SESSION['admin_id'])) redirect('dashboard.php');
 $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
