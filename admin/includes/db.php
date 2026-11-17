@@ -2,7 +2,7 @@
 // Database connection + small helpers (all queries use prepared statements)
 session_start();
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
-$conn = new mysqli('localhost', 'root', '', 'library_db'); // XAMPP defaults
+$conn = new mysqli('127.0.0.1', 'root', '', 'library_db', 3306); // XAMPP defaults
 $conn->set_charset('utf8mb4');
 
 // Run a prepared statement: db_run($sql, 'si', [$a, $b]) -> mysqli_stmt
