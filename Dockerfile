@@ -1,16 +1,12 @@
-# ==============================================================================
-# Production-ready Dockerfile for Library Management System (PHP + MySQL + Apache)
-# ==============================================================================
+
+# PHP + Apache + MariaDB
 FROM php:8.2-apache-bookworm
 
-# Metadata
 LABEL maintainer="Library Management System"
-LABEL description="Optimized, self-contained container for PHP + MySQL Library Management System"
 
-# Prevent interactive prompts during apt installs
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install required system packages, MariaDB (embedded DB engine), curl (for healthcheck), and socat (optional remote DB proxy)
+# Install MariaDB and required utilities
 RUN apt-get update && apt-get install -y --no-install-recommends \
     mariadb-server \
     mariadb-client \
@@ -18,13 +14,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     socat \
     && rm -rf /var/lib/apt/lists/*
 
-# Install and enable mysqli extension required by includes/db.php
-RUN docker-php-ext-install mysqli && docker-php-ext-enable mysqli
+# Install mysqli
+RUN docker-php-ext-install mysqli \
+    && docker-php-ext-enable mysqli
 
-# Enable Apache rewrite and headers modules
+# Enable Apache modules
 RUN a2enmod rewrite headers
 
-# Security & performance configurations for Apache
+# Apache security configuration
 RUN { \
     echo 'ServerTokens Prod'; \
     echo 'ServerSignature Off'; \
@@ -42,7 +39,7 @@ RUN { \
 } > /etc/apache2/conf-available/security-hardening.conf \
     && a2enconf security-hardening
 
-# Production PHP settings
+# PHP configuration
 RUN { \
     echo 'memory_limit = 256M'; \
     echo 'upload_max_filesize = 20M'; \
@@ -58,36 +55,32 @@ RUN { \
     echo 'session.cookie_samesite = "Lax"'; \
 } > /usr/local/etc/php/conf.d/library-custom.ini
 
-# Set working directory to Apache document root
 WORKDIR /var/www/html
 
-# Copy application source code
+# Copy project
 COPY . /var/www/html/
 
-# Copy and set up the entrypoint script (strip carriage returns in case copied on Windows)
+# Install entrypoint
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+
 RUN sed -i 's/\r$//' /usr/local/bin/docker-entrypoint.sh \
     && chmod +x /usr/local/bin/docker-entrypoint.sh
 
-# Pre-initialize MariaDB database at build time with library_db schema and sample data
+# Initialize MariaDB and import database schema
 RUN mkdir -p /var/run/mysqld /var/lib/mysql \
     && chown -R mysql:mysql /var/run/mysqld /var/lib/mysql \
     && service mariadb start \
     && mysql -u root -e "CREATE DATABASE IF NOT EXISTS library_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" \
-    && mysql -u root library_db < /var/www/html/database/library_db.sql \
-    && mysql -u root -e "GRANT ALL PRIVILEGES ON *.* TO 'root'@'localhost' WITH GRANT OPTION; FLUSH PRIVILEGES;" \
+    && if [ -f /var/www/html/database/library_db.sql ]; then mysql -u root library_db < /var/www/html/database/library_db.sql; fi \
     && service mariadb stop
 
-# Set proper ownership and permissions for Apache web server
+# Application permissions
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html
 
-# Expose HTTP port
 EXPOSE 80
 
-# Health check to ensure the service is running and answering HTTP requests
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
     CMD curl -fL http://localhost/ || exit 1
 
-# Start services via the entrypoint script
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
